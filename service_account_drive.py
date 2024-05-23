@@ -71,7 +71,7 @@ class ServiceAccountDrive:
         return folder_id
 
     @staticmethod
-    def upload_file_to_drive(file_path, folder_id):
+    def upload_file_to_drive(file_path, folder_id, file_metadata=None):
         """
         Uploads a file to a Google Drive folder.
 
@@ -80,8 +80,11 @@ class ServiceAccountDrive:
             folder_id (str): The ID of the Google Drive folder to upload the file to.
         """
         service, credentials = ServiceAccountDrive.initialize_drive_service()
-
-        file_metadata = {"name": os.path.basename(file_path), "parents": [folder_id]}
+        if file_metadata is None:
+            file_metadata = {
+                "name": os.path.basename(file_path),
+                "parents": [folder_id],
+            }
         media = MediaFileUpload(file_path, resumable=True)
         file = (
             service.files()
@@ -130,3 +133,79 @@ class ServiceAccountDrive:
             print(f"Download {int(status.progress() * 100)}%.")
 
         print(f"File downloaded successfully. File path: {file_path}")
+
+    @staticmethod
+    def list_folders_in_folder(folder_id):
+        """
+        Lists all folders within a given folder.
+
+        Args:
+            folder_id (str): The ID of the folder to list folders from.
+
+        Returns:
+            None
+        """
+        try:
+            # List files and folders within the current folder
+            service, credentials = ServiceAccountDrive.initialize_drive_service()
+
+            results = (
+                service.files()
+                .list(
+                    corpora="allDrives",
+                    q=f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.folder'",
+                    fields="files(id, name)",
+                    includeItemsFromAllDrives=True,
+                    supportsAllDrives=True,
+                )
+                .execute()
+            )
+
+            # Process each folder
+            for folder in results.get("files", []):
+                folder_name = folder["name"]
+                folder_id = folder["id"]
+                # Print or process permissions for the folder
+                print(f"Folder: {folder_name}, ID: {folder_id}")
+                # Recursively list folders within this folder
+                ServiceAccountDrive.list_folders_in_folder(folder_id)
+
+        except Exception as e:
+            print("An error occurred:", e)
+
+    @staticmethod
+    def list_files_in_folder(folder_id):
+        """
+        Lists the files in a given folder.
+
+        Args:
+            folder_id (str): The ID of the folder to list files from.
+
+        Returns:
+            None
+        """
+        try:
+            # List files and folders within the current folder
+            service, credentials = ServiceAccountDrive.initialize_drive_service()
+
+            results = (
+                service.files()
+                .list(
+                    corpora="allDrives",
+                    q=f"'{folder_id}' in parents and mimeType!='application/vnd.google-apps.folder'",
+                    fields="files(id, name)",
+                    includeItemsFromAllDrives=True,
+                    supportsAllDrives=True,
+                )
+                .execute()
+            )
+
+            # Process each file
+            for file in results.get("files", []):
+                file_name = file["name"]
+                file_id = file["id"]
+                # Print or process permissions for the file
+                print(f"File: {file_name}, ID: {file_id}")
+
+        except Exception as e:
+            print("An error occurred:", e)
