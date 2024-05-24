@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import json
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -18,9 +19,10 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
 class ServiceAccountDrive:
-
-    @staticmethod
-    def initialize_drive_service():
+    def __init__(self):
+        self.service, self.credentials = None, None
+        
+    def initialize_drive_service(self,initialize_type="cred_info", creds=None):
         """
         Initializes the Google Drive service and returns the service object and credentials.
 
@@ -29,21 +31,29 @@ class ServiceAccountDrive:
             credentials (google.auth.credentials.Credentials): The credentials object used for authentication.
         """
         # If modifying these scopes, delete the file token.json.
-        scope = [
+        self.scope = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
             "https://www.googleapis.com/auth/drive.file",
         ]
+        if initialize_type == "cred_info":
+            if creds is None:
+                print("Please specific the creds parameter for initialize_type='cred_info'")
+            else
+                cred_json = json.loads(creds)
+                self.credentials = service_account.Credentials.from_service_account_info(
+                    cred_json, scopes=self.scope
+                )
+        elif initialize_type == "service_account":
+            self.credentials = service_account.Credentials.from_service_account_file(
+                filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=self.scope
+            )
+        self.service = build("drive", "v3", credentials=self.credentials)
 
-        credentials = service_account.Credentials.from_service_account_file(
-            filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=scope
-        )
-        service = build("drive", "v3", credentials=credentials)
-
-        return service, credentials
+        return self.service, self.credentials
 
     @staticmethod
-    def get_folder_id_by_name(folder_name):
+    def get_folder_id_by_name(self,folder_name):
         """
         Gets the ID of a Google Drive folder by its name.
 
@@ -53,10 +63,10 @@ class ServiceAccountDrive:
         Returns:
             folder_id (str): The ID of the Google Drive folder.
         """
-        service, credentials = ServiceAccountDrive.initialize_drive_service()
-
+        if ServiceAccountDrive.service is None:
+            print("Please initialize the service first using initialize_drive_service() method.")
         response = (
-            service.files()
+            ServiceAccountDrive.service.files()
             .list(
                 corpora="allDrives",
                 q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'",
@@ -79,7 +89,6 @@ class ServiceAccountDrive:
             file_path (str): The path to the file to upload.
             folder_id (str): The ID of the Google Drive folder to upload the file to.
         """
-        service, credentials = ServiceAccountDrive.initialize_drive_service()
         if file_metadata is None:
             file_metadata = {
                 "name": os.path.basename(file_path),
@@ -87,7 +96,7 @@ class ServiceAccountDrive:
             }
         media = MediaFileUpload(file_path, resumable=True)
         file = (
-            service.files()
+            ServiceAccountDrive.service.files()
             .create(
                 body=file_metadata,
                 media_body=media,
@@ -107,9 +116,8 @@ class ServiceAccountDrive:
         Args:
             file_id (str): The ID of the file to delete.
         """
-        service, credentials = ServiceAccountDrive.initialize_drive_service()
 
-        service.files().delete(fileId=file_id, supportsAllDrives=True).execute()
+        ServiceAccountDrive.service.files().delete(fileId=file_id, supportsAllDrives=True).execute()
 
         print(f"File deleted successfully. File ID: {file_id}")
 
@@ -122,9 +130,8 @@ class ServiceAccountDrive:
             file_id (str): The ID of the file to download.
             file_path (str): The path to save the downloaded file.
         """
-        service, credentials = ServiceAccountDrive.initialize_drive_service()
 
-        request = service.files().get_media(fileId=file_id)
+        request = ServiceAccountDrive.service.files().get_media(fileId=file_id)
         fh = open(file_path, "wb")
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -147,10 +154,9 @@ class ServiceAccountDrive:
         """
         try:
             # List files and folders within the current folder
-            service, credentials = ServiceAccountDrive.initialize_drive_service()
 
             results = (
-                service.files()
+                ServiceAccountDrive.service.files()
                 .list(
                     corpora="allDrives",
                     q=f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.folder'",
@@ -186,10 +192,8 @@ class ServiceAccountDrive:
         """
         try:
             # List files and folders within the current folder
-            service, credentials = ServiceAccountDrive.initialize_drive_service()
-
             results = (
-                service.files()
+                ServiceAccountDrive.service.files()
                 .list(
                     corpora="allDrives",
                     q=f"'{folder_id}' in parents and mimeType!='application/vnd.google-apps.folder'",
