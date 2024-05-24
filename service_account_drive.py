@@ -21,7 +21,7 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 class ServiceAccountDrive:
     def __init__(self):
         self.service, self.credentials = None, None
-        
+    
     def initialize_drive_service(self, initialize_type="cred_info", creds=None):
         """
         Initializes the Google Drive service and returns the service object and credentials.
@@ -57,7 +57,7 @@ class ServiceAccountDrive:
         return self.service, self.credentials
 
     @staticmethod
-    def get_folder_id_by_name(self,folder_name):
+    def get_folder_id_by_name(folder_name):
         """
         Gets the ID of a Google Drive folder by its name.
 
