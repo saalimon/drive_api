@@ -22,9 +22,13 @@ class ServiceAccountDrive:
     def __init__(self):
         self.service, self.credentials = None, None
         
-    def initialize_drive_service(self,initialize_type="cred_info", creds=None):
+    def initialize_drive_service(self, initialize_type="cred_info", creds=None):
         """
         Initializes the Google Drive service and returns the service object and credentials.
+
+        Args:
+            initialize_type (str, optional): The type of initialization to use. Defaults to "cred_info".
+            creds (str, optional): The credentials information. Required if initialize_type is "cred_info".
 
         Returns:
             service (googleapiclient.discovery.Resource): The Google Drive service object.
@@ -38,8 +42,8 @@ class ServiceAccountDrive:
         ]
         if initialize_type == "cred_info":
             if creds is None:
-                print("Please specific the creds parameter for initialize_type='cred_info'")
-            else
+                print("Please specify the creds parameter for initialize_type='cred_info'")
+            else:
                 cred_json = json.loads(creds)
                 self.credentials = service_account.Credentials.from_service_account_info(
                     cred_json, scopes=self.scope
