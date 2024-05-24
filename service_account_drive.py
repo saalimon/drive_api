@@ -19,10 +19,9 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
 class ServiceAccountDrive:
-    def __init__(self):
-        self.service, self.credentials = None, None
-    
-    def initialize_drive_service(self, initialize_type="cred_info", creds=None):
+
+    @classmethod
+    def initialize_drive_service(cls, initialize_type="cred_info", creds=None):
         """
         Initializes the Google Drive service and returns the service object and credentials.
 
@@ -35,7 +34,7 @@ class ServiceAccountDrive:
             credentials (google.auth.credentials.Credentials): The credentials object used for authentication.
         """
         # If modifying these scopes, delete the file token.json.
-        self.scope = [
+        cls.scope = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
             "https://www.googleapis.com/auth/drive.file",
@@ -45,16 +44,16 @@ class ServiceAccountDrive:
                 print("Please specify the creds parameter for initialize_type='cred_info'")
             else:
                 cred_json = json.loads(creds)
-                self.credentials = service_account.Credentials.from_service_account_info(
-                    cred_json, scopes=self.scope
+                cls.credentials = service_account.Credentials.from_service_account_info(
+                    cred_json, scopes=cls.scope
                 )
         elif initialize_type == "service_account":
-            self.credentials = service_account.Credentials.from_service_account_file(
-                filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=self.scope
+            cls.credentials = service_account.Credentials.from_service_account_file(
+                filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=cls.scope
             )
-        self.service = build("drive", "v3", credentials=self.credentials)
+        cls.service = build("drive", "v3", credentials=cls.credentials)
 
-        return self.service, self.credentials
+        return cls.service, cls.credentials
 
     @classmethod
     def get_folder_id_by_name(cls, folder_name):
