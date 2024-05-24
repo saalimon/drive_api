@@ -1,13 +1,7 @@
 import os
-
-import pandas as pd
 import json
 from google.oauth2 import service_account
-from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from httplib2 import Http
-from oauth2client import file, client, tools
-from googleapiclient import sample_tools
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 """
