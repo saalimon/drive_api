@@ -56,8 +56,8 @@ class ServiceAccountDrive:
 
         return self.service, self.credentials
 
-    @staticmethod
-    def get_folder_id_by_name(folder_name):
+    @classmethod
+    def get_folder_id_by_name(cls, folder_name):
         """
         Gets the ID of a Google Drive folder by its name.
 
@@ -67,10 +67,10 @@ class ServiceAccountDrive:
         Returns:
             folder_id (str): The ID of the Google Drive folder.
         """
-        if ServiceAccountDrive.service is None:
+        if cls.service is None:
             print("Please initialize the service first using initialize_drive_service() method.")
         response = (
-            ServiceAccountDrive.service.files()
+            cls.service.files()
             .list(
                 corpora="allDrives",
                 q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'",
@@ -84,8 +84,8 @@ class ServiceAccountDrive:
 
         return folder_id
 
-    @staticmethod
-    def upload_file_to_drive(file_path, folder_id, file_metadata=None):
+    @classmethod
+    def upload_file_to_drive(cls, file_path, folder_id, file_metadata=None):
         """
         Uploads a file to a Google Drive folder.
 
@@ -93,6 +93,8 @@ class ServiceAccountDrive:
             file_path (str): The path to the file to upload.
             folder_id (str): The ID of the Google Drive folder to upload the file to.
         """
+        if cls.service is None:
+            print("Please initialize the service first using initialize_drive_service() method.")
         if file_metadata is None:
             file_metadata = {
                 "name": os.path.basename(file_path),
@@ -100,7 +102,7 @@ class ServiceAccountDrive:
             }
         media = MediaFileUpload(file_path, resumable=True)
         file = (
-            ServiceAccountDrive.service.files()
+            cls.service.files()
             .create(
                 body=file_metadata,
                 media_body=media,
@@ -112,21 +114,22 @@ class ServiceAccountDrive:
 
         print(f"File uploaded successfully. File ID: {file.get('id')}")
 
-    @staticmethod
-    def delete_file_from_drive(file_id):
+    @classmethod
+    def delete_file_from_drive(cls, file_id):
         """
         Deletes a file from Google Drive.
 
         Args:
             file_id (str): The ID of the file to delete.
         """
-
-        ServiceAccountDrive.service.files().delete(fileId=file_id, supportsAllDrives=True).execute()
+        if cls.service is None:
+            print("Please initialize the service first using initialize_drive_service() method.")
+        cls.service.files().delete(fileId=file_id, supportsAllDrives=True).execute()
 
         print(f"File deleted successfully. File ID: {file_id}")
 
-    @staticmethod
-    def download_file_from_drive(file_id, file_path):
+    @classmethod
+    def download_file_from_drive(cls, file_id, file_path):
         """
         Downloads a file from Google Drive.
 
@@ -134,8 +137,9 @@ class ServiceAccountDrive:
             file_id (str): The ID of the file to download.
             file_path (str): The path to save the downloaded file.
         """
-
-        request = ServiceAccountDrive.service.files().get_media(fileId=file_id)
+        if cls.service is None:
+            print("Please initialize the service first using initialize_drive_service() method.")
+        request = cls.service.files().get_media(fileId=file_id)
         fh = open(file_path, "wb")
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -145,8 +149,8 @@ class ServiceAccountDrive:
 
         print(f"File downloaded successfully. File path: {file_path}")
 
-    @staticmethod
-    def list_folders_in_folder(folder_id):
+    @classmethod
+    def list_folders_in_folder(cls, folder_id):
         """
         Lists all folders within a given folder.
 
@@ -156,11 +160,13 @@ class ServiceAccountDrive:
         Returns:
             None
         """
+        if cls.service is None:
+            print("Please initialize the service first using initialize_drive_service() method.")
         try:
             # List files and folders within the current folder
 
             results = (
-                ServiceAccountDrive.service.files()
+                cls.service.files()
                 .list(
                     corpora="allDrives",
                     q=f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.folder'",
@@ -178,13 +184,13 @@ class ServiceAccountDrive:
                 # Print or process permissions for the folder
                 print(f"Folder: {folder_name}, ID: {folder_id}")
                 # Recursively list folders within this folder
-                ServiceAccountDrive.list_folders_in_folder(folder_id)
+                cls.list_folders_in_folder(folder_id)
 
         except Exception as e:
             print("An error occurred:", e)
 
-    @staticmethod
-    def list_files_in_folder(folder_id):
+    @classmethod
+    def list_files_in_folder(cls, folder_id):
         """
         Lists the files in a given folder.
 
@@ -194,10 +200,12 @@ class ServiceAccountDrive:
         Returns:
             None
         """
+        if cls.service is None:
+            print("Please initialize the service first using initialize_drive_service() method.")
         try:
             # List files and folders within the current folder
             results = (
-                ServiceAccountDrive.service.files()
+                cls.service.files()
                 .list(
                     corpora="allDrives",
                     q=f"'{folder_id}' in parents and mimeType!='application/vnd.google-apps.folder'",
