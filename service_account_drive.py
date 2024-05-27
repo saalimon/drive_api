@@ -2,7 +2,7 @@ import os
 import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseUpload, MediaIoBaseDownload
 
 """
 os.environ['GCP_PROJECT'] 
@@ -35,7 +35,9 @@ class ServiceAccountDrive:
         ]
         if initialize_type == "cred_info":
             if creds is None:
-                print("Please specify the creds parameter for initialize_type='cred_info'")
+                print(
+                    "Please specify the creds parameter for initialize_type='cred_info'"
+                )
             else:
                 cred_json = json.loads(creds)
                 cls.credentials = service_account.Credentials.from_service_account_info(
@@ -43,7 +45,8 @@ class ServiceAccountDrive:
                 )
         elif initialize_type == "service_account":
             cls.credentials = service_account.Credentials.from_service_account_file(
-                filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=cls.scope
+                filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
+                scopes=cls.scope,
             )
         cls.service = build("drive", "v3", credentials=cls.credentials)
 
@@ -61,7 +64,9 @@ class ServiceAccountDrive:
             folder_id (str): The ID of the Google Drive folder.
         """
         if cls.service is None:
-            print("Please initialize the service first using initialize_drive_service() method.")
+            print(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
         response = (
             cls.service.files()
             .list(
@@ -78,22 +83,49 @@ class ServiceAccountDrive:
         return folder_id
 
     @classmethod
-    def upload_file_to_drive(cls, file_path, folder_id, file_metadata=None):
+    def upload_file_to_drive(
+        cls, file_path, folder_id, file_metadata=None, io_base=False, mimetype=None
+    ):
         """
         Uploads a file to a Google Drive folder.
 
         Args:
             file_path (str): The path to the file to upload.
             folder_id (str): The ID of the Google Drive folder to upload the file to.
+            file_metadata (dict, optional): Additional metadata for the file (default: None).
+            io_base (bool, optional): Whether to use MediaIoBaseUpload for uploading (default: False).
+            mimetype (str, optional): The mimetype of the file (required if io_base=True).
+
+        Raises:
+            ValueError: If the service is not initialized.
+            ValueError: If io_base=True but mimetype is not specified.
+
+        Returns:
+            str: The ID of the uploaded file.
         """
         if cls.service is None:
-            print("Please initialize the service first using initialize_drive_service() method.")
+            raise ValueError(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
+
         if file_metadata is None:
             file_metadata = {
                 "name": os.path.basename(file_path),
                 "parents": [folder_id],
             }
-        media = MediaFileUpload(file_path, resumable=True)
+
+        if io_base and mimetype is not None:
+            # Use MediaIoBaseUpload for large files
+            media = MediaIoBaseUpload(
+                file_path, mimetype=mimetype, resumable=True
+            )  # e.g. mimetype='image/jpeg'
+        elif io_base and mimetype is None:
+            # Raise an error if mimetype is not specified
+            raise ValueError("Please specify the mimetype parameter for io_base=True")
+        else:
+            # Use MediaFileUpload for small files and can access their path
+            media = MediaFileUpload(file_path, resumable=True)
+
         file = (
             cls.service.files()
             .create(
@@ -105,7 +137,7 @@ class ServiceAccountDrive:
             .execute()
         )
 
-        print(f"File uploaded successfully. File ID: {file.get('id')}")
+        return file.get("id")
 
     @classmethod
     def delete_file_from_drive(cls, file_id):
@@ -116,7 +148,9 @@ class ServiceAccountDrive:
             file_id (str): The ID of the file to delete.
         """
         if cls.service is None:
-            print("Please initialize the service first using initialize_drive_service() method.")
+            raise ValueError(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
         cls.service.files().delete(fileId=file_id, supportsAllDrives=True).execute()
 
         print(f"File deleted successfully. File ID: {file_id}")
@@ -131,7 +165,9 @@ class ServiceAccountDrive:
             file_path (str): The path to save the downloaded file.
         """
         if cls.service is None:
-            print("Please initialize the service first using initialize_drive_service() method.")
+            raise ValueError(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
         request = cls.service.files().get_media(fileId=file_id)
         fh = open(file_path, "wb")
         downloader = MediaIoBaseDownload(fh, request)
@@ -154,7 +190,9 @@ class ServiceAccountDrive:
             None
         """
         if cls.service is None:
-            print("Please initialize the service first using initialize_drive_service() method.")
+            raise ValueError(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
         try:
             # List files and folders within the current folder
 
@@ -194,7 +232,9 @@ class ServiceAccountDrive:
             None
         """
         if cls.service is None:
-            print("Please initialize the service first using initialize_drive_service() method.")
+            raise ValueError(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
         try:
             # List files and folders within the current folder
             results = (
