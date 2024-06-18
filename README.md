@@ -24,7 +24,7 @@ In this step, replace `"path_to_your_credentials_file.json"` with the path to yo
 ```python
 folder_id = ServiceAccountDrive.get_folder_id_by_name("Folder Name")
 ```
-Replace `"some doc name"` with the name of the folder you're interested in.
+Replace `"Folder Name"` with the name of the folder you're interested in.
 
 4. **List all files in a specific folder:**
 
@@ -32,3 +32,12 @@ Replace `"some doc name"` with the name of the folder you're interested in.
 files = ServiceAccountDrive.list_files_in_folder(folder_id)
 ```
 Replace `folder_id` with the folder ID you got in the previous step.
+
+5. **Download file from drive**
+
+```python
+ServiceAccountDrive.download_file_from_drive("file_id", "path/to/save")
+```
+Replace `file_id` with the file ID and replace `path/to/save` with saved path
+
+
