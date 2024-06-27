@@ -258,3 +258,31 @@ class ServiceAccountDrive:
 
         except Exception as e:
             print("An error occurred:", e)
+    @classmethod
+    def create_folder_in_folder(cls, folder_id, folder_name):
+        """
+        Creates a folder within a given folder.
+
+        Args:
+            folder_id (str): The ID of the folder to create a folder in.
+            folder_name (str): The name of the folder to create.
+
+        Returns:
+            folder_id (str): The ID of the created folder.
+        """
+        if cls.service is None:
+            raise ValueError(
+                "Please initialize the service first using initialize_drive_service() method."
+            )
+        file_metadata = {
+            "name": folder_name,
+            "mimeType": "application/vnd.google-apps.folder",
+            "parents": [folder_id],
+        }
+        folder = (
+            cls.service.files()
+            .create(body=file_metadata, supportsAllDrives=True)
+            .execute()
+        )
+
+        return folder.get("id")
