@@ -21,7 +21,7 @@ jobs:
           python -m build
           #pip install .
           find ./dist/*.whl | xargs pip install
-          python simple_test.py
+          python service_account_drive.py
       - name: Configure Git
         run: |
           git config --global user.email "apwheele@gmail.com"
