@@ -24,8 +24,8 @@ jobs:
           python service_account_drive.py
       - name: Configure Git
         run: |
-          git config --global user.email "apwheele@gmail.com"
-          git config --global user.name "apwheele"
+          git config --global user.email "saalimon@mail.com"
+          git config --global user.name "saalimon"
       - name: Commit and push wheel
         run: |
           git add -f ./dist/*.whl
