@@ -141,7 +141,7 @@ class ServiceAccountDrive:
                         body=new_file_metadata, 
                         media_body=media, 
                         supportsAllDrives=True,
-                        addParents=file_metadata["parents"]  # Move it to new folder
+                        addParents=folder_id  # Move it to new folder
                     )
                     .execute()
                 )
