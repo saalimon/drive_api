@@ -84,7 +84,7 @@ class ServiceAccountDrive:
 
     @classmethod
     def upload_file_to_drive(
-        cls, file_path, folder_id, file_metadata=None, io_base=False, mimetype=None
+        cls, file_path, folder_id, file_metadata=None, io_base=False, mimetype=None, replace=True
     ):
         """
         Uploads a file to a Google Drive folder.
@@ -124,18 +124,45 @@ class ServiceAccountDrive:
             raise ValueError("Please specify the mimetype parameter for io_base=True")
         else:
             # Use MediaFileUpload for small files and can access their path
-            media = MediaFileUpload(file_path, resumable=True)
-
-        file = (
-            cls.service.files()
-            .create(
-                body=file_metadata,
-                media_body=media,
-                fields="id",
-                supportsAllDrives=True,
+            media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
+        # search filename in folder id if exists --> file id
+        # https://developers.google.com/workspace/drive/api/reference/rest/v3/files/update
+        if replace:
+            file_lists = cls.list_files_in_folder(folder_id)
+            file_meta_exists = next((file["id"] for file in file_lists if file_metadata["name"] == file["name"]), None)
+            if file_meta_exists:
+                file = (
+                    cls.service.files()
+                    .update(
+                        fileId=file_meta_exists, 
+                        body=file_metadata, 
+                        media_body=media, 
+                        supportsAllDrives=True
+                    )
+                    .execute()
+                )
+            else:    
+                file = (
+                    cls.service.files()
+                    .create(
+                        body=file_metadata,
+                        media_body=media,
+                        fields="id",
+                        supportsAllDrives=True,
+                    )
+                    .execute()
+                )
+        else:    
+            file = (
+                cls.service.files()
+                .create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields="id",
+                    supportsAllDrives=True,
+                )
+                .execute()
             )
-            .execute()
-        )
 
         return file.get("id")
 
@@ -179,7 +206,7 @@ class ServiceAccountDrive:
         print(f"File downloaded successfully. File path: {file_path}")
 
     @classmethod
-    def list_folders_in_folder(cls, folder_id):
+    def list_folders_in_folder(cls, folder_id, recursive=True):
         """
         Lists all folders within a given folder.
 
@@ -195,12 +222,12 @@ class ServiceAccountDrive:
             )
         try:
             # List files and folders within the current folder
-
+            return_results = []
             results = (
                 cls.service.files()
                 .list(
                     corpora="allDrives",
-                    q=f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.folder'",
+                    q=f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
                     fields="files(id, name)",
                     includeItemsFromAllDrives=True,
                     supportsAllDrives=True,
@@ -212,14 +239,20 @@ class ServiceAccountDrive:
             for folder in results.get("files", []):
                 folder_name = folder["name"]
                 folder_id = folder["id"]
+                return_results.append({
+                    "name": folder_name,
+                    "id": folder_id,
+                })
                 # Print or process permissions for the folder
                 print(f"Folder: {folder_name}, ID: {folder_id}")
-                # Recursively list folders within this folder
-                cls.list_folders_in_folder(folder_id)
+                if recursive:
+                    # Recursively list folders within this folder
+                    cls.list_folders_in_folder(folder_id)
 
         except Exception as e:
             print("An error occurred:", e)
-
+            return None
+        return return_results
     @classmethod
     def list_files_in_folder(cls, folder_id):
         """
@@ -236,6 +269,7 @@ class ServiceAccountDrive:
                 "Please initialize the service first using initialize_drive_service() method."
             )
         try:
+            return_results = []
             # List files and folders within the current folder
             results = (
                 cls.service.files()
@@ -253,11 +287,17 @@ class ServiceAccountDrive:
             for file in results.get("files", []):
                 file_name = file["name"]
                 file_id = file["id"]
+                return_results.append({
+                    "name": file_name,
+                    "id": file_id,
+                })
                 # Print or process permissions for the file
                 print(f"File: {file_name}, ID: {file_id}")
 
         except Exception as e:
             print("An error occurred:", e)
+            return None
+        return return_results
     @classmethod
     def create_folder_in_folder(cls, folder_id, folder_name):
         """
