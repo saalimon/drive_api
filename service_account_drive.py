@@ -131,13 +131,17 @@ class ServiceAccountDrive:
             file_lists = cls.list_files_in_folder(folder_id)
             file_meta_exists = next((file["id"] for file in file_lists if file_metadata["name"] == file["name"]), None)
             if file_meta_exists:
+                new_file_metadata = {
+                    'name': file_metadata["name"]
+                }
                 file = (
                     cls.service.files()
                     .update(
                         fileId=file_meta_exists, 
-                        body=file_metadata, 
+                        body=new_file_metadata, 
                         media_body=media, 
                         supportsAllDrives=True
+                        addParents=test_folder_id  # Move it to new folder
                     )
                     .execute()
                 )
