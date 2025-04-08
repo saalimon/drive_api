@@ -140,7 +140,7 @@ class ServiceAccountDrive:
                         fileId=file_meta_exists, 
                         body=new_file_metadata, 
                         media_body=media, 
-                        supportsAllDrives=True
+                        supportsAllDrives=True,
                         addParents=test_folder_id  # Move it to new folder
                     )
                     .execute()
