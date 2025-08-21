@@ -1,7 +1,7 @@
 # drive_api
 
 This Python program is used to interact with Google Drive using the Google Drive API. It allows you to initialize a service, get a folder ID by its name, and list all files in a specific folder.
-
+[![.github/workflows/main.yml](https://github.com/saalimon/drive_api/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/saalimon/drive_api/actions/workflows/main.yml)
 ## Usage
 0. **Pre-requisites**
 ```python
