@@ -258,49 +258,60 @@ class ServiceAccountDrive:
             return None
         return return_results
     @classmethod
-    def list_files_in_folder(cls, folder_id):
+    def list_files_in_folder(cls, folder_id, recursive=True):
         """
-        Lists the files in a given folder.
+        Lists all files within a given folder.
 
         Args:
             folder_id (str): The ID of the folder to list files from.
+            recursive (bool): Whether to recursively list files in subfolders
 
         Returns:
-            None
+            list: List of file dictionaries with 'name' and 'id' keys
         """
         if cls.service is None:
             raise ValueError(
                 "Please initialize the service first using initialize_drive_service() method."
             )
-        try:
-            return_results = []
-            # List files and folders within the current folder
-            results = (
-                cls.service.files()
-                .list(
-                    corpora="allDrives",
-                    q=f"'{folder_id}' in parents and mimeType!='application/vnd.google-apps.folder'",
-                    fields="files(id, name)",
-                    includeItemsFromAllDrives=True,
-                    supportsAllDrives=True,
-                )
-                .execute()
-            )
 
-            # Process each file
-            for file in results.get("files", []):
-                file_name = file["name"]
-                file_id = file["id"]
-                return_results.append({
-                    "name": file_name,
-                    "id": file_id,
-                })
-                # Print or process permissions for the file
-                print(f"File: {file_name}, ID: {file_id}")
+        return_results = []
+        page_token = None
+
+        try:
+            while True:
+                # List files within the current folder
+                results = (
+                    cls.service.files()
+                    .list(
+                        corpora="allDrives",
+                        q=f"'{folder_id}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false",
+                        fields="nextPageToken, files(id, name)",
+                        includeItemsFromAllDrives=True,
+                        supportsAllDrives=True,
+                        pageSize=1000,
+                        pageToken=page_token
+                    )
+                    .execute()
+                )
+
+                # Process each file
+                for file in results.get("files", []):
+                    file_name = file["name"]
+                    file_id = file["id"]
+                    return_results.append({
+                        "name": file_name,
+                        "id": file_id,
+                    })
+                    print(f"File: {file_name}, ID: {file_id}")
+
+                # Check if there are more pages
+                page_token = results.get('nextPageToken')
+                if not page_token:
+                    break
 
         except Exception as e:
             print("An error occurred:", e)
-            return None
+
         return return_results
     @classmethod
     def create_folder_in_folder(cls, folder_id, folder_name):
