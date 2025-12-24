@@ -258,7 +258,7 @@ class ServiceAccountDrive:
             return None
         return return_results
     @classmethod
-    def list_files_in_folder(cls, folder_id, recursive=True):
+    def list_files_in_folder(cls, folder_id, recursive=True, print_log=False):
         """
         Lists all files within a given folder.
 
@@ -302,7 +302,8 @@ class ServiceAccountDrive:
                         "name": file_name,
                         "id": file_id,
                     })
-                    print(f"File: {file_name}, ID: {file_id}")
+                    if print_log:
+                        print(f"File: {file_name}, ID: {file_id}")
 
                 # Check if there are more pages
                 page_token = results.get('nextPageToken')
